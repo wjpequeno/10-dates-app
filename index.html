@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>10 Dates - Conexões</title>
+    <style>
+        :root {
+            --bg-color: #fcf9f2;
+            --primary-color: #d35400;
+            --secondary-color: #e67e22;
+            --text-color: #333;
+            --card-bg: #fff;
+            --light-gray: #ecf0f1;
+        }
+        body {
+            font-family: 'Georgia', serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        h1, h2, h3 { color: var(--primary-color); text-align: center; }
+        #app-container { width: 100%; max-width: 450px; }
+        
+        .screen { display: none; flex-direction: column; width: 100%; animation: fadeIn 0.4s; }
+        .screen.active { display: flex; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .btn {
+            background-color: var(--primary-color); color: white; border: none;
+            padding: 15px; margin: 8px 0; border-radius: 8px; font-size: 16px;
+            cursor: pointer; width: 100%; transition: background 0.3s;
+        }
+        .btn:hover { background-color: var(--secondary-color); }
+        .btn-outline { background-color: transparent; border: 2px solid var(--primary-color); color: var(--primary-color); }
+        
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; font-size: 14px; margin-bottom: 5px; font-weight: bold; }
+        .input-group input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
+        
+        .card {
+            background-color: var(--card-bg); border-radius: 12px; padding: 30px 20px;
+            text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 20px;
+        }
+        
+        .profile-card { border: 2px solid var(--light-gray); padding: 15px; border-radius: 8px; margin-bottom: 10px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: white;}
+        .profile-card:hover { border-color: var(--primary-color); }
+        .profile-info h3 { margin: 0 0 5px 0; font-size: 18px; text-align: left; }
+        .profile-info p { margin: 0; font-size: 12px; color: gray; }
+        
+        .connection-meter { width: 100%; background-color: var(--light-gray); border-radius: 10px; height: 20px; margin-top: 10px; overflow: hidden; }
+        .connection-fill { height: 100%; background-color: var(--primary-color); width: 0%; transition: width 0.5s ease-out; }
+        
+        .rating-container { display: flex; justify-content: space-between; margin-top: 20px; }
+        .rating-btn { flex: 1; margin: 0 5px; padding: 15px 0; font-size: 18px; background: var(--light-gray); border: none; border-radius: 8px; cursor: pointer; }
+        .rating-btn:hover { background: var(--secondary-color); color: white; }
+        
+        .header-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .back-btn { font-size: 14px; color: gray; text-decoration: underline; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div id="app-container">
+        
+        <div id="screen-profiles" class="screen active">
+            <h1>Seus Dates</h1>
+            <p style="text-align: center; color: gray; font-size: 14px;">Com quem você vai se conectar hoje?</p>
+            <div id="profiles-list"></div>
+            <button class="btn" onclick="showScreen('screen-new-profile')">+ Adicionar Nova Pessoa</button>
+        </div>
+
+        <div id="screen-new-profile" class="screen">
+            <div class="header-nav">
+                <span class="back-btn" onclick="showScreen('screen-profiles')">← Voltar</span>
+                <h2>Novo Date</h2>
+                <span style="width: 40px;"></span>
+            </div>
+            <div class="card">
+                <div class="input-group">
+                    <label>Nome ou Apelido</label>
+                    <input type="text" id="p-name" placeholder="Ex: João">
+                </div>
+                <div class="input-group">
+                    <label>Idade</label>
+                    <input type="number" id="p-age" placeholder="Ex: 28">
+                </div>
+                <div class="input-group">
+                    <label>Onde conheceu?</label>
+                    <input type="text" id="p-where" placeholder="Ex: Tinder, Bar, Amigos...">
+                </div>
+                <div class="input-group">
+                    <label>Instagram / WhatsApp</label>
+                    <input type="text" id="p-contact" placeholder="@instagram ou número">
+                </div>
+                <button class="btn" onclick="saveProfile()">Salvar e Começar</button>
+            </div>
+        </div>
+
+        <div id="screen-dashboard" class="screen">
+            <div class="header-nav">
+                <span class="back-btn" onclick="showScreen('screen-profiles')">← Trocar</span>
+                <h2 id="dash-name">Nome</h2>
+                <span style="width: 40px;"></span>
+            </div>
+            
+            <div class="card" style="background: #fff8f3; border: 1px solid var(--primary-color);">
+                <h3 style="margin-top:0;">Missão Surpresa de Hoje</h3>
+                <p id="dash-surprise-text" style="font-style: italic;"></p>
+                <button class="btn btn-outline" style="padding: 10px; font-size: 14px;" onclick="generateSurprise()">Sortear Outra Missão</button>
+            </div>
+
+            <div class="card">
+                <h3 style="margin-top:0;">Sintonia e Conexão</h3>
+                <p style="font-size: 12px; color: gray; text-align: center; margin-bottom: 5px;">Nível de compatibilidade baseado nas conversas</p>
+                <div class="connection-meter">
+                    <div id="dash-connection-fill" class="connection-fill"></div>
+                </div>
+                <p id="dash-connection-text" style="text-align: center; font-weight: bold; margin-top: 5px;">0%</p>
+            </div>
+
+            <button class="btn" onclick="showScreen('screen-themes')">Abrir Cartas de Temas</button>
+        </div>
+
+        <div id="screen-themes" class="screen">
+            <div class="header-nav">
+                <span class="back-btn" onclick="showScreen('screen-dashboard')">← Voltar</span>
+                <h2>Escolha um Tema</h2>
+                <span style="width: 40px;"></span>
+            </div>
+            <div id="theme-list"></div>
+        </div>
+
+        <div id="screen-question" class="screen">
+            <div class="header-nav">
+                <span class="back-btn" onclick="showScreen('screen-themes')">← Temas</span>
+                <span style="color: gray; font-size: 12px;" id="q-counter">1/9</span>
+                <span style="width: 40px;"></span>
+            </div>
+            <div class="card" style="min-height: 250px; display: flex; flex-direction: column; justify-content: center;">
+                <p id="q-theme-title" style="font-size: 12px; text-transform: uppercase; color: gray; letter-spacing: 1px; margin-top: 0;">Tema</p>
+                <h2 id="q-text" style="font-size: 20px; line-height: 1.4; color: var(--text-color);">Pergunta...</h2>
+            </div>
+            <button class="btn" onclick="showRating()">Já conversamos!</button>
+        </div>
+
+        <div id="screen-rating" class="screen">
+            <div class="card">
+                <h2>Como foi a sintonia?</h2>
+                <p>O quão alinhados vocês se sentiram ao responder a essa pergunta?</p>
+                <p style="font-size: 12px; color: gray;">1 = Nada a ver | 5 = Almas gêmeas</p>
+                <div class="rating-container">
+                    <button class="rating-btn" onclick="submitRating(1)">1</button>
+                    <button class="rating-btn" onclick="submitRating(2)">2</button>
+                    <button class="rating-btn" onclick="submitRating(3)">3</button>
+                    <button class="rating-btn" onclick="submitRating(4)">4</button>
+                    <button class="rating-btn" onclick="submitRating(5)">5</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- DADOS DO LIVRO (10 Temas Normais + 1 Tema Surpresa) ---
+        const surpriseData = [
+            "Planejem o dia perfeito juntos e definam uma data pra ele acontecer.",
+            "Façam uma coisa improvável hoje que vocês normalmente não fariam. Uma loucura juntos!",
+            "Cada um tem direito a fazer 3 perguntas e 3 desafios agora.",
+            "Pensem em uma festa temática, marquem uma data, organizem juntos e convidem pessoas.",
+            "Liguem para alguém que vocês amam e que foi importante e agradeçam com uma mensagem.",
+            "Contem um para o outro surpresas que adorariam ter. Missão: realizá-las até o fim do ano.",
+            "Planeje, em segredo, a programação de um dia inteiro para o seu parceiro e marque a data.",
+            "Planejem a próxima viagem juntos agora, com lugar, data e roteiro.",
+            "Escrevam uma lista de 'coisas a fazer juntos antes de morrer'."
+        ];
+
+        const themesData = [
+            {
+                id: 1, title: "Sobre você e sobre mim", questions: [
+                    "Se você só pudesse escolher 3 coisas para comer para o resto da sua vida, quais seriam?",
+                    "Como você descreveria a sua personalidade?",
+                    "Falem sobre 5 qualidades que vocês gostam um no outro.",
+                    "Qual é o seu filme, sua série, sua música e livro favoritos?",
+                    "Quais são seus hobbies favoritos?",
+                    "Como você gosta de relaxar e recarregar suas energias depois de um dia difícil?",
+                    "Se você pudesse descrever um momento de autodescoberta significativo em sua vida, qual seria? E o que aprendeu sobre você?",
+                    "O que mais te inspira na vida? Existem filosofias ou ideias que moldam sua maneira de olhar o mundo?",
+                    "Quais coisas você quer fazer antes de morrer?"
+                ]
+            },
+            {
+                id: 2, title: "Metas, sonhos e futuro", questions: [
+                    "Quais são os seus sonhos para o futuro?",
+                    "Como você imagina a sua vida no próximo ano? E daqui a 5 anos?",
+                    "Se pudesse escolher uma meta ou um sonho para começar a colocar em prática agora, qual seria?",
+                    "O que você individualmente pode fazer para conseguir se aproximar dos seus objetivos futuros?",
+                    "O que posso fazer para te apoiar na realização de seus sonhos individuais?",
+                    "Quais são as experiências que vocês gostariam de compartilhar ao longo dos próximos anos?",
+                    "Quais são os obstáculos que você acredita que pode ter ao buscar suas metas? Como enfrentá-los juntos?",
+                    "O que vocês podem fazer para nutrir a paixão e o entusiasmo em relação aos seus sonhos compartilhados?",
+                    "Qual o legado que vocês querem deixar como casal?"
+                ]
+            },
+            {
+                id: 3, title: "Sexo e intimidade", questions: [
+                    "O que você acha que é mais importante para criar uma conexão emocional e física forte durante o sexo?",
+                    "Quais são os rituais ou hábitos que podemos colocar na nossa rotina para aumentar a intimidade e a conexão sexual?",
+                    "Quais são as suas expectativas em relação à frequência e à qualidade do sexo em seu relacionamento?",
+                    "O que te faz perder a conexão sexual e quais os caminhos para recuperá-la?",
+                    "Existe alguma insegurança, trauma ou limite sexual que você gostaria de compartilhar?",
+                    "Existem desejos ou fantasias que você gostaria de explorar comigo?",
+                    "O que eu faço na hora do sexo que você mais gosta?",
+                    "O que aumenta ainda mais o seu prazer quando estamos transando?",
+                    "Como vocês podem manter a paixão e a conexão sexual ao longo do tempo em seu relacionamento?"
+                ]
+            },
+            {
+                id: 4, title: "Trabalho e dinheiro", questions: [
+                    "O que é sucesso profissional para você?",
+                    "Quais as suas expectativas financeiras?",
+                    "Como você se sente em relação ao equilíbrio entre a minha vida pessoal e o meu trabalho?",
+                    "Quais são seus maiores medos em relação a sua carreira?",
+                    "Existem preocupações financeiras que você sente que precisamos abordar como casal?",
+                    "Existem hábitos de consumo que você gostaria que mudássemos?",
+                    "Como podemos tornar nossas metas financeiras um projeto compartilhado e motivador para ambos?",
+                    "Há algum medo ou insegurança relacionado ao dinheiro que você gostaria de discutir?",
+                    "De que maneira a estabilidade ou instabilidade financeira impacta nosso planejamento para o futuro?"
+                ]
+            },
+            {
+                id: 5, title: "Comunicação e conflitos", questions: [
+                    "Como você prefere discutir assuntos importantes: em conversas espontâneas ou planejadas?",
+                    "Como você se sente sobre a maneira como resolvemos nossos últimos desentendimentos?",
+                    "Como você se sente em relação ao uso de humor durante nossas discussões?",
+                    "Existe algum tema que você sente que evitamos discutir, mas sobre o qual precisamos falar?",
+                    "Existe algo que eu faço durante os conflitos que te magoa ou impede a resolução?",
+                    "Você acha que nossos estilos de comunicação são compatíveis? Como podemos melhorar?",
+                    "Como você gostaria que eu demonstrasse apoio durante momentos de estresse ou conflito?",
+                    "Existe algo que eu disse em um conflito anterior que você gostaria de revisitar para esclarecer ou corrigir?",
+                    "Quais estratégias podemos adotar para evitar mal-entendidos nas nossas conversas?"
+                ]
+            },
+            {
+                id: 6, title: "Tempo, limites e compatibilidade", questions: [
+                    "Existe algo que você nunca tentou antes, mas gostaria de experimentar comigo?",
+                    "Existem limites específicos que você sente que precisamos estabelecer ou ajustar?",
+                    "Existem gostos ou preferências que você sacrificou pelo nosso relacionamento? Como se sente a respeito disso?",
+                    "Como podemos criar novas tradições legais na nossa rotina?",
+                    "Você acha que nossos amigos e família respeitam os limites do nosso relacionamento? Como podemos melhorar isso?",
+                    "Como você avalia a importância de datas comemorativas e aniversários em nosso relacionamento?",
+                    "Existem atividades ou hobbies que você prefere fazer sozinho?",
+                    "Como você se sente sobre a quantidade de tempo que passamos juntos atualmente? Como melhorar?",
+                    "Existem atividades externas ou grupos nos quais poderíamos nos envolver, juntos, para expandir o nosso círculo social?"
+                ]
+            },
+            {
+                id: 7, title: "Saúde e estilo de vida", questions: [
+                    "Como você descreveria seu estilo de vida atual e como ele influencia nossa relação?",
+                    "Existem hábitos de saúde que você gostaria que mudássemos juntos?",
+                    "Como você acha que o consumo de álcool, tabaco ou outras substâncias afeta nossa relação?",
+                    "Você se sente confortável discutindo suas preocupações de saúde comigo?",
+                    "Você se sente apoiado por mim em suas escolhas de estilo de vida? Como posso oferecer mais suporte?",
+                    "Que atividades de bem-estar você gostaria de experimentar comigo?",
+                    "Como podemos motivar um ao outro a manter um compromisso com um estilo de vida saudável?",
+                    "Existe alguma mudança em nosso ambiente doméstico que poderia nos ajudar a viver de maneira mais saudável?",
+                    "Como a espiritualidade influencia seu bem-estar pessoal e nossa vida como casal?"
+                ]
+            },
+            {
+                id: 8, title: "Respeito e compromisso", questions: [
+                    "Para você, quais são os principais acordos que temos dentro do nosso relacionamento?",
+                    "De que maneiras você se sente respeitado e valorizado por mim? Como posso melhorar?",
+                    "Quais ações você considera importantes para demonstrar respeito pelo espaço e tempo um do outro?",
+                    "Como eu posso demonstrar compromisso com nosso relacionamento no dia a dia?",
+                    "Você se sente respeitado nas opiniões que divergimos? Como podemos manter o respeito nessas diferenças?",
+                    "Como você se sente em relação aos acordos que fizemos dentro do nosso relacionamento até agora?",
+                    "Você acha que há um equilíbrio saudável entre nosso compromisso um com o outro e nossa independência pessoal?",
+                    "Você se sente seguro para expressar quando algo não está respeitando seus limites ou expectativas?",
+                    "O que te faria sentir que os nossos acordos estão sendo quebrados?"
+                ]
+            },
+            {
+                id: 9, title: "Nossa história", questions: [
+                    "Qual foi o momento em que você sentiu que nossa conexão estava mais forte do que nunca?",
+                    "Quando foi que você percebeu que estava apaixonado por mim?",
+                    "Existem momentos específicos em nossa história que você considera como pontos de virada para sermos o que somos hoje?",
+                    "Se pudéssemos voltar no tempo para reviver uma experiência que compartilhamos juntos, qual você escolheria e por quê?",
+                    "Qual é a lembrança mais engraçada ou descontraída que você tem de nós dois juntos?",
+                    "Se você fosse contar a nossa história para um desconhecido, como contaria?",
+                    "Se pudéssemos extrair uma lição valiosa de nossa história, qual seria?",
+                    "Se você pudesse escolher qualquer lugar do mundo para me levar, qual seria e por quê?",
+                    "Quais são as coisas que a gente precisa prometer nunca fazer um ao outro?"
+                ]
+            },
+            {
+                id: 10, title: "Monogamia e Não Monogamia", questions: [
+                    "O que exclusividade afetiva e sexual significam para você na prática?",
+                    "Quais são os seus limites inegociáveis quando se trata de se relacionar ou interagir com outras pessoas?",
+                    "Você já teve experiências fora do modelo monogâmico tradicional? Se sim, o que aprendeu com elas?",
+                    "O que faria você sentir que a confiança ou os nossos acordos foram quebrados?",
+                    "Como podemos garantir que ambos se sintam seguros e validados, independentemente do formato de relacionamento?",
+                    "Como você costuma lidar com o ciúme quando ele surge e como prefere ser acolhido nesse momento?",
+                    "Você acredita que o formato de um relacionamento deve ser fixo ou pode evoluir com o tempo?",
+                    "Como podemos comunicar atração ou interesse por outras pessoas de uma forma construtiva?",
+                    "Qual é o seu maior medo e o seu maior desejo ao pensar nas estruturas do nosso relacionamento?"
+                ]
+            }
+        ];
+
+        // --- LÓGICA DO APLICATIVO ---
+        let profiles = JSON.parse(localStorage.getItem('10dates_profiles')) || [];
+        let currentProfileIndex = null;
+        let currentThemeIndex = null;
+        let currentQuestions = [];
+        let currentQIndex = 0;
+
+        function saveToStorage() {
+            localStorage.setItem('10dates_profiles', JSON.stringify(profiles));
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            if(screenId === 'screen-profiles') renderProfiles();
+        }
+
+        // --- PERFIS ---
+        function renderProfiles() {
+            const list = document.getElementById('profiles-list');
+            list.innerHTML = '';
+            if (profiles.length === 0) {
+                list.innerHTML = '<p style="text-align:center; color:gray;">Nenhum date cadastrado ainda.</p>';
+                return;
+            }
+            profiles.forEach((p, index) => {
+                let percent = p.qAnswered > 0 ? Math.round((p.cPoints / (p.qAnswered * 5)) * 100) : 0;
+                list.innerHTML += `
+                    <div class="profile-card" onclick="selectProfile(${index})">
+                        <div class="profile-info">
+                            <h3>${p.name} (${p.age})</h3>
+                            <p>Conheceu em: ${p.where}</p>
+                        </div>
+                        <div style="text-align:right;">
+                            <span style="font-weight:bold; color:var(--primary-color)">${percent}%</span>
+                            <p style="margin:0; font-size:10px; color:gray;">Conexão</p>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function saveProfile() {
+            const name = document.getElementById('p-name').value;
+            const age = document.getElementById('p-age').value;
+            const where = document.getElementById('p-where').value;
+            const contact = document.getElementById('p-contact').value;
+            if(!name) return alert("Preencha pelo menos o nome!");
+
+            profiles.push({
+                name, age, where, contact,
+                seenSurprises: [], cPoints: 0, qAnswered: 0
+            });
+            saveToStorage();
+            
+            // Limpa o form
+            document.getElementById('p-name').value = '';
+            document.getElementById('p-age').value = '';
+            document.getElementById('p-where').value = '';
+            document.getElementById('p-contact').value = '';
+
+            selectProfile(profiles.length - 1);
+        }
+
+        function selectProfile(index) {
+            currentProfileIndex = index;
+            let p = profiles[index];
+            document.getElementById('dash-name').innerText = `Date com ${p.name}`;
+            updateConnectionMeter();
+            generateSurprise();
+            renderThemes();
+            showScreen('screen-dashboard');
+        }
+
+        function updateConnectionMeter() {
+            let p = profiles[currentProfileIndex];
+            let percent = p.qAnswered > 0 ? Math.round((p.cPoints / (p.qAnswered * 5)) * 100) : 0;
+            document.getElementById('dash-connection-fill').style.width = percent + '%';
+            document.getElementById('dash-connection-text').innerText = percent + '% de Sintonia (' + p.qAnswered + ' cartas lidas)';
+        }
+
+        // --- SURPRESAS ---
+        function generateSurprise() {
+            let p = profiles[currentProfileIndex];
+            // Se já viu todas, reseta o histórico de surpresas para rodar de novo
+            if (p.seenSurprises.length >= surpriseData.length) {
+                p.seenSurprises = [];
+            }
+            
+            let available = surpriseData.map((text, i) => ({text, i})).filter(s => !p.seenSurprises.includes(s.i));
+            let randomObj = available[Math.floor(Math.random() * available.length)];
+            
+            document.getElementById('dash-surprise-text').innerText = randomObj.text;
+            
+            // Salva que essa surpresa foi vista
+            p.seenSurprises.push(randomObj.i);
+            saveToStorage();
+        }
+
+        // --- TEMAS E CARTAS ---
+        function renderThemes() {
+            const list = document.getElementById('theme-list');
+            list.innerHTML = '';
+            themesData.forEach((theme, index) => {
+                list.innerHTML += `<button class="btn btn-outline" onclick="startTheme(${index})">${theme.title}</button>`;
+            });
+        }
+
+        function shuffle(array) {
+            let arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        function startTheme(index) {
+            currentThemeIndex = index;
+            // Embaralha as 9 perguntas daquele tema
+            currentQuestions = shuffle(themesData[index].questions);
+            currentQIndex = 0;
+            loadQuestionUI();
+            showScreen('screen-question');
+        }
+
+        function loadQuestionUI() {
+            if (currentQIndex >= currentQuestions.length) {
+                alert("Vocês finalizaram todas as cartas deste tema!");
+                showScreen('screen-dashboard');
+                return;
+            }
+            document.getElementById('q-theme-title').innerText = themesData[currentThemeIndex].title;
+            document.getElementById('q-text').innerText = currentQuestions[currentQIndex];
+            document.getElementById('q-counter').innerText = `${currentQIndex + 1}/${currentQuestions.length}`;
+        }
+
+        function showRating() {
+            showScreen('screen-rating');
+        }
+
+        function submitRating(score) {
+            let p = profiles[currentProfileIndex];
+            p.cPoints += score;
+            p.qAnswered += 1;
+            saveToStorage();
+            
+            updateConnectionMeter();
+            
+            currentQIndex++;
+            loadQuestionUI();
+            
+            if (currentQIndex < currentQuestions.length) {
+                showScreen('screen-question');
+            }
+        }
+
+        // Inicializa a primeira tela
+        renderProfiles();
+    </script>
+</body>
+</html>
