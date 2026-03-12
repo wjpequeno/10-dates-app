@@ -6,6 +6,7 @@
     <title>10 Dates - Conexões</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
     <style>
         :root { --bg-color: #fcf9f2; --primary-color: #d35400; --secondary-color: #e67e22; --text-color: #333; --card-bg: #fff; --light-gray: #ecf0f1; }
@@ -150,23 +151,28 @@
         </div>
 
         <div id="screen-reveal" class="screen">
-            <div class="card">
-                <h2 style="font-size: 18px; color: gray;">A Pergunta:</h2>
-                <p id="rev-q-text" style="font-style: italic;"></p>
+            <div class="card" style="padding: 15px;">
                 
-                <hr style="margin: 20px 0; border: 0; border-top: 1px dashed #ccc;">
-                
-                <div class="reveal-box">
-                    <div class="reveal-name" id="rev-name-1">Pessoa 1</div>
-                    <div id="rev-ans-1">Resposta...</div>
+                <div id="capture-area" style="background: white; padding: 20px; border-radius: 8px;">
+                    <h2 style="font-size: 18px; color: gray; margin-top: 0;">A Pergunta:</h2>
+                    <p id="rev-q-text" style="font-style: italic;"></p>
+                    
+                    <hr style="margin: 20px 0; border: 0; border-top: 1px dashed #ccc;">
+                    
+                    <div class="reveal-box">
+                        <div class="reveal-name" id="rev-name-1">Pessoa 1</div>
+                        <div id="rev-ans-1">Resposta...</div>
+                    </div>
+
+                    <div class="reveal-box">
+                        <div class="reveal-name" id="rev-name-2">Pessoa 2</div>
+                        <div id="rev-ans-2">Resposta...</div>
+                    </div>
                 </div>
 
-                <div class="reveal-box">
-                    <div class="reveal-name" id="rev-name-2">Pessoa 2</div>
-                    <div id="rev-ans-2">Resposta...</div>
-                </div>
+                <button class="btn" style="background-color: #f39c12; margin-top: 10px;" onclick="downloadReveal()">📸 Salvar Respostas (Imagem)</button>
 
-                <div id="host-controls" style="display: none; margin-top: 20px;">
+                <div id="host-controls" style="display: none; margin-top: 15px;">
                     <button class="btn" onclick="nextQuestion()">Próxima Pergunta</button>
                     <button class="btn btn-outline" onclick="backToLobby()">Pausar / Voltar aos Temas</button>
                 </div>
@@ -453,6 +459,19 @@
 
         function backToLobby() {
             db.ref('rooms/' + roomCode).update({ state: 'lobby' });
+        }
+
+        // --- FUNÇÃO PARA GERAR A IMAGEM ---
+        function downloadReveal() {
+            const captureArea = document.getElementById('capture-area');
+            
+            // html2canvas tira uma "foto" da div especificada
+            html2canvas(captureArea, { backgroundColor: "#ffffff" }).then(canvas => {
+                let link = document.createElement('a');
+                link.download = `date_${roomCode}_resposta.png`;
+                link.href = canvas.toDataURL("image/png");
+                link.click();
+            });
         }
     </script>
 </body>
