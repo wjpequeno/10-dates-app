@@ -19,16 +19,38 @@
         .btn { background-color: var(--primary-color); color: white; border: none; padding: 15px; margin: 8px 0; border-radius: 8px; font-size: 16px; cursor: pointer; width: 100%; transition: background 0.3s; }
         .btn:hover { background-color: var(--secondary-color); }
         .btn-outline { background-color: transparent; border: 2px solid var(--primary-color); color: var(--primary-color); }
+        .btn-danger { background-color: #c0392b; } .btn-danger:hover { background-color: #e74c3c; }
         .input-group { margin-bottom: 15px; }
         .input-group label { display: block; font-size: 14px; margin-bottom: 5px; font-weight: bold; }
         .input-group input, .input-group textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 16px; font-family: inherit;}
+        
+        .file-upload { position: relative; display: inline-block; width: 100%; text-align: center; margin-bottom: 15px; }
+        .file-upload input[type="file"] { display: none; }
+        .file-upload-label { display: inline-block; padding: 10px 20px; background-color: var(--light-gray); color: var(--text-color); border-radius: 20px; cursor: pointer; font-size: 14px; font-weight: bold; border: 2px dashed #ccc; width: 100%; box-sizing: border-box;}
+        .preview-img { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; margin-top: 10px; display: none; border: 2px solid var(--primary-color);}
+        .avatar-small { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-color); vertical-align: middle; margin-right: 10px; display: none;}
+        .avatar-large { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary-color); margin: 0 auto 10px auto; display: block; background: #eee;}
+        
         .card { background-color: var(--card-bg); border-radius: 12px; padding: 30px 20px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
         .profile-card { border: 2px solid var(--light-gray); padding: 15px; border-radius: 8px; margin-bottom: 10px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: white;}
         .profile-card:hover { border-color: var(--primary-color); }
         .profile-info h3 { margin: 0 0 5px 0; font-size: 18px; text-align: left; color: var(--primary-color); }
         .profile-info p { margin: 0; font-size: 12px; color: gray; line-height: 1.4; }
         .reveal-box { background-color: #fff8f3; border-left: 4px solid var(--primary-color); padding: 15px; margin-top: 15px; text-align: left; border-radius: 4px;}
-        .reveal-name { font-weight: bold; font-size: 12px; color: var(--primary-color); text-transform: uppercase; margin-bottom: 5px;}
+        .reveal-name { font-weight: bold; font-size: 12px; color: var(--primary-color); text-transform: uppercase; margin-bottom: 5px; display: flex; align-items: center;}
+        
+        .history-item { background: #f9f9f9; border: 1px solid #ddd; padding: 15px; border-radius: 8px; margin-bottom: 10px; text-align: left; }
+        .history-q { font-weight: bold; font-size: 14px; margin-bottom: 10px; }
+        .history-a { font-size: 13px; color: #555; margin-bottom: 5px; border-left: 2px solid var(--primary-color); padding-left: 10px;}
+        .history-score { font-size: 12px; font-weight: bold; color: #27ae60; text-align: right; margin-top: 10px;}
+        
+        .connection-meter { width: 100%; background-color: var(--light-gray); border-radius: 10px; height: 20px; margin-top: 10px; overflow: hidden; }
+        .connection-fill { height: 100%; background-color: #27ae60; width: 0%; transition: width 0.5s ease-out; }
+        
+        .rating-container { display: flex; justify-content: space-between; margin-top: 15px; }
+        .rating-btn { flex: 1; margin: 0 5px; padding: 10px 0; font-size: 16px; background: var(--light-gray); border: none; border-radius: 8px; cursor: pointer; font-weight: bold;}
+        .rating-btn:hover { background: var(--primary-color); color: white; }
+
         .header-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .back-btn { font-size: 14px; color: gray; text-decoration: underline; cursor: pointer; }
     </style>
@@ -47,6 +69,12 @@
                     <label>Seu Nome (Organizador)</label>
                     <input type="text" id="host-name-input" placeholder="Como você se chama?">
                 </div>
+                <div class="file-upload">
+                    <label for="host-photo" class="file-upload-label">📸 Adicionar Minha Foto</label>
+                    <input type="file" id="host-photo" accept="image/*" onchange="previewImage(event, 'host-preview', 'host-base64')">
+                    <img id="host-preview" class="preview-img">
+                    <input type="hidden" id="host-base64">
+                </div>
                 <button class="btn" onclick="startAsHost()">Abrir Meus Perfis</button>
             </div>
 
@@ -63,19 +91,54 @@
                 <span style="width: 40px;"></span>
             </div>
             <div id="profiles-list"></div>
-            <button class="btn" onclick="showScreen('screen-new-profile')">+ Adicionar Nova Pessoa</button>
+            <button class="btn" onclick="openNewProfileForm()">+ Adicionar Nova Pessoa</button>
         </div>
 
-        <div id="screen-new-profile" class="screen">
+        <div id="screen-profile-details" class="screen">
             <div class="header-nav">
                 <span class="back-btn" onclick="showScreen('screen-profiles')">← Voltar</span>
-                <h2>Novo Date</h2>
+                <h2>Perfil</h2>
+                <span style="width: 40px;"></span>
+            </div>
+            <div class="card">
+                <img id="detail-avatar" class="avatar-large" src="">
+                <h2 id="detail-name" style="margin-top: 0; margin-bottom: 5px;">Nome</h2>
+                <p id="detail-info" style="color: gray; font-size: 14px; margin-bottom: 20px;">Idade | Local | Contato</p>
+                
+                <div style="background: #f9f9f9; padding: 10px; border-radius: 8px; margin-bottom: 20px;">
+                    <p style="margin: 0; font-weight: bold; font-size: 14px;">Progresso:</p>
+                    <p id="detail-stats" style="margin: 5px 0 0 0; font-size: 12px; color: #27ae60;">0% de Sintonia | 0 Temas Concluídos</p>
+                </div>
+
+                <button class="btn" onclick="startHostSession()">▶️ Iniciar Date Agora</button>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-outline" style="flex: 1;" onclick="openEditProfileForm()">✏️ Editar</button>
+                    <button class="btn btn-danger" style="flex: 1;" onclick="deleteProfile()">🗑️ Excluir</button>
+                </div>
+            </div>
+
+            <div class="card" style="text-align: left; display: none;" id="detail-history-card">
+                <h3 style="margin-top: 0; text-align: center;">📖 Histórico de Respostas</h3>
+                <div id="detail-history-list"></div>
+            </div>
+        </div>
+
+        <div id="screen-form-profile" class="screen">
+            <div class="header-nav">
+                <span class="back-btn" onclick="cancelProfileForm()">← Voltar</span>
+                <h2 id="form-profile-title">Novo Date</h2>
                 <span style="width: 40px;"></span>
             </div>
             <div class="card" style="text-align: left;">
                 <div class="input-group">
                     <label>Nome do(a) Date</label>
                     <input type="text" id="p-name" placeholder="Ex: Rebeca">
+                </div>
+                <div class="file-upload">
+                    <label for="p-photo" class="file-upload-label">📸 Adicionar Foto Dela(e)</label>
+                    <input type="file" id="p-photo" accept="image/*" onchange="previewImage(event, 'p-preview', 'p-base64')">
+                    <img id="p-preview" class="preview-img">
+                    <input type="hidden" id="p-base64">
                 </div>
                 <div class="input-group">
                     <label>Idade</label>
@@ -104,6 +167,12 @@
                     <label>Seu Nome</label>
                     <input type="text" id="guest-name" placeholder="Como quer ser chamado?">
                 </div>
+                <div class="file-upload">
+                    <label for="guest-photo" class="file-upload-label">📸 Escolher Minha Foto</label>
+                    <input type="file" id="guest-photo" accept="image/*" onchange="previewImage(event, 'guest-preview', 'guest-base64')">
+                    <img id="guest-preview" class="preview-img">
+                    <input type="hidden" id="guest-base64">
+                </div>
                 <div class="input-group">
                     <label>Código da Sala</label>
                     <input type="text" id="join-code" placeholder="Ex: A4B2" style="text-transform: uppercase;">
@@ -119,13 +188,21 @@
             </div>
             
             <div id="dashboard-content" style="display: none;">
+                <div class="card">
+                    <h3 style="margin-top:0;">Nível de Sintonia</h3>
+                    <p style="font-size: 12px; color: gray; margin-bottom: 5px;">Baseado nas avaliações das respostas</p>
+                    <div class="connection-meter">
+                        <div id="dash-connection-fill" class="connection-fill"></div>
+                    </div>
+                    <p id="dash-connection-text" style="font-weight: bold; margin-top: 5px; color: #27ae60;">0% (0 Cartas Lidas)</p>
+                </div>
+
                 <div class="card" style="background: #fff8f3; border: 1px solid var(--primary-color);">
-                    <h3 style="margin-top:0; color: #e67e22;">🎁 Missão Surpresa de Hoje</h3>
+                    <h3 style="margin-top:0; color: #e67e22;">🎁 Missão Surpresa</h3>
                     <p id="dash-surprise-text" style="font-style: italic;"></p>
                 </div>
 
                 <h3>Escolha um Tema</h3>
-                <p style="font-size: 12px; color: gray; text-align: center;">Temas com ✅ já foram concluídos por vocês.</p>
                 <div id="theme-list"></div>
             </div>
         </div>
@@ -153,30 +230,44 @@
         <div id="screen-reveal" class="screen">
             <div class="card" style="padding: 15px;">
                 
-                <div id="capture-area" style="background: white; padding: 20px; border-radius: 8px;">
+                <div id="capture-area" style="background: white; padding: 15px; border-radius: 8px;">
                     <h2 style="font-size: 18px; color: gray; margin-top: 0;">A Pergunta:</h2>
                     <p id="rev-q-text" style="font-style: italic;"></p>
-                    
                     <hr style="margin: 20px 0; border: 0; border-top: 1px dashed #ccc;">
                     
                     <div class="reveal-box">
-                        <div class="reveal-name" id="rev-name-1">Pessoa 1</div>
+                        <div class="reveal-name">
+                            <img id="rev-img-1" class="avatar-small" src="">
+                            <span id="rev-name-1">Pessoa 1</span>
+                        </div>
                         <div id="rev-ans-1">Resposta...</div>
                     </div>
 
                     <div class="reveal-box">
-                        <div class="reveal-name" id="rev-name-2">Pessoa 2</div>
+                        <div class="reveal-name">
+                            <img id="rev-img-2" class="avatar-small" src="">
+                            <span id="rev-name-2">Pessoa 2</span>
+                        </div>
                         <div id="rev-ans-2">Resposta...</div>
                     </div>
                 </div>
 
-                <button class="btn" style="background-color: #f39c12; margin-top: 10px;" onclick="downloadReveal()">📸 Salvar Respostas (Imagem)</button>
+                <button class="btn" style="background-color: #f39c12; margin-top: 10px;" onclick="downloadReveal()">📸 Salvar Respostas</button>
 
-                <div id="host-controls" style="display: none; margin-top: 15px;">
-                    <button class="btn" onclick="nextQuestion()">Próxima Pergunta</button>
-                    <button class="btn btn-outline" onclick="backToLobby()">Pausar / Voltar aos Temas</button>
+                <div id="host-controls" style="display: none; margin-top: 20px; padding-top: 20px; border-top: 2px dashed #ccc;">
+                    <h3 style="font-size: 16px; margin-bottom: 5px;">Que nota damos para essa sintonia?</h3>
+                    <p style="font-size: 12px; color: gray; margin-top:0;">1 (Diferentes) a 5 (Almas Gêmeas)</p>
+                    <div class="rating-container">
+                        <button class="rating-btn" onclick="submitRating(1)">1</button>
+                        <button class="rating-btn" onclick="submitRating(2)">2</button>
+                        <button class="rating-btn" onclick="submitRating(3)">3</button>
+                        <button class="rating-btn" onclick="submitRating(4)">4</button>
+                        <button class="rating-btn" onclick="submitRating(5)">5</button>
+                    </div>
+                    <button class="btn btn-outline" style="margin-top: 15px;" onclick="backToLobby()">Pausar / Voltar aos Temas</button>
                 </div>
-                <p id="guest-waiting-text" style="display:none; color: gray; font-size: 12px; margin-top: 20px;">Aguardando o organizador continuar...</p>
+                
+                <p id="guest-waiting-text" style="display:none; color: gray; font-size: 12px; margin-top: 20px;">Aguardando o organizador computar a sintonia e avançar...</p>
             </div>
         </div>
 
@@ -222,18 +313,54 @@
             { id: 9, title: "Monogamia e Não Monogamia", questions: [ "O que exclusividade afetiva e sexual significam para você na prática?", "Quais são os seus limites inegociáveis quando se trata de se relacionar ou interagir com outras pessoas?", "Você já teve experiências fora do modelo monogâmico tradicional? Se sim, o que aprendeu com elas?", "O que faria você sentir que a confiança ou os nossos acordos foram quebrados?", "Como podemos garantir que ambos se sintam seguros e validados, independentemente do formato de relacionamento?", "Como você costuma lidar com o ciúme quando ele surge e como prefere ser acolhido nesse momento?", "Você acredita que o formato de um relacionamento deve ser fixo ou pode evoluir com o tempo?", "Como podemos comunicar atração ou interesse por outras pessoas de uma forma construtiva?", "Qual é o seu maior medo e o seu maior desejo ao pensar nas estruturas do nosso relacionamento?"] }
         ];
 
+        // --- LÓGICA DE FOTOS E COMPRESSÃO ---
+        function previewImage(event, previewId, base64Id) {
+            const file = event.target.files[0];
+            if(!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    const size = 150; 
+                    canvas.width = size; canvas.height = size;
+                    
+                    const min = Math.min(img.width, img.height);
+                    const sx = (img.width - min) / 2;
+                    const sy = (img.height - min) / 2;
+                    ctx.drawImage(img, sx, sy, min, min, 0, 0, size, size);
+                    
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                    document.getElementById(base64Id).value = dataUrl;
+                    
+                    let previewElement = document.getElementById(previewId);
+                    previewElement.src = dataUrl;
+                    previewElement.style.display = 'inline-block';
+                }
+                img.src = e.target.result;
+            }
+            reader.readAsDataURL(file);
+        }
+
         // --- VARIÁVEIS DE ESTADO ---
         let profiles = JSON.parse(localStorage.getItem('10dates_profiles')) || [];
         let hostName = localStorage.getItem('10dates_hostname') || "";
+        let hostAvatar = localStorage.getItem('10dates_hostavatar') || "";
         let currentProfileIndex = null;
+        let editingProfileIndex = null; // Trava para saber se estamos criando ou editando
         let isHost = false;
         let roomCode = "";
         let amIWaiting = false;
 
-        // Preenche o nome do host se já existir no cache
+        // Preenche dados do Host se já existirem no cache
         window.onload = () => {
-            if(document.getElementById('host-name-input')) {
-                document.getElementById('host-name-input').value = hostName;
+            if(document.getElementById('host-name-input')) document.getElementById('host-name-input').value = hostName;
+            if(hostAvatar) {
+                document.getElementById('host-base64').value = hostAvatar;
+                document.getElementById('host-preview').src = hostAvatar;
+                document.getElementById('host-preview').style.display = 'inline-block';
             }
         };
 
@@ -246,12 +373,15 @@
 
         function startAsHost() {
             hostName = document.getElementById('host-name-input').value;
+            hostAvatar = document.getElementById('host-base64').value;
             if(!hostName) return alert("Preencha o seu nome como organizador!");
+            
             localStorage.setItem('10dates_hostname', hostName);
+            localStorage.setItem('10dates_hostavatar', hostAvatar);
             showScreen('screen-profiles');
         }
 
-        // --- FLUXO DO HOST (GERENCIAR PERFIS) ---
+        // --- FLUXO DO HOST: CRUD DE PERFIS ---
         function saveToStorage() { localStorage.setItem('10dates_profiles', JSON.stringify(profiles)); }
 
         function renderProfiles() {
@@ -264,15 +394,16 @@
             
             profiles.forEach((p, index) => {
                 let temasFeitos = p.completedThemes ? p.completedThemes.length : 0;
-                let textAge = p.age ? `, ${p.age} anos` : '';
-                let textWhere = p.where ? `<br>📍 Conheceu em: ${p.where}` : '';
-                let textContact = p.contact ? `<br>📱 Contato: ${p.contact}` : '';
+                let photoTag = p.avatar ? `<img src="${p.avatar}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;margin-right:10px;vertical-align:middle;">` : '';
 
                 list.innerHTML += `
-                    <div class="profile-card" onclick="startHostSession(${index})">
-                        <div class="profile-info">
-                            <h3>${p.name}${textAge}</h3>
-                            <p>${temasFeitos}/10 Temas Concluídos ${textWhere} ${textContact}</p>
+                    <div class="profile-card" onclick="openProfileDetails(${index})">
+                        <div style="display:flex; align-items:center;">
+                            ${photoTag}
+                            <div class="profile-info">
+                                <h3>${p.name}</h3>
+                                <p>${temasFeitos}/10 Temas Concluídos</p>
+                            </div>
                         </div>
                         <span style="font-size: 20px; color: var(--primary-color);">➔</span>
                     </div>
@@ -280,36 +411,133 @@
             });
         }
 
+        function openNewProfileForm() {
+            editingProfileIndex = null;
+            document.getElementById('form-profile-title').innerText = "Novo Date";
+            document.getElementById('p-name').value = '';
+            document.getElementById('p-age').value = '';
+            document.getElementById('p-where').value = '';
+            document.getElementById('p-contact').value = '';
+            document.getElementById('p-base64').value = '';
+            document.getElementById('p-preview').style.display = 'none';
+            showScreen('screen-form-profile');
+        }
+
+        function openEditProfileForm() {
+            editingProfileIndex = currentProfileIndex;
+            let p = profiles[currentProfileIndex];
+            
+            document.getElementById('form-profile-title').innerText = "Editar Date";
+            document.getElementById('p-name').value = p.name || '';
+            document.getElementById('p-age').value = p.age || '';
+            document.getElementById('p-where').value = p.where || '';
+            document.getElementById('p-contact').value = p.contact || '';
+            
+            if(p.avatar) {
+                document.getElementById('p-base64').value = p.avatar;
+                document.getElementById('p-preview').src = p.avatar;
+                document.getElementById('p-preview').style.display = 'inline-block';
+            } else {
+                document.getElementById('p-base64').value = '';
+                document.getElementById('p-preview').style.display = 'none';
+            }
+            showScreen('screen-form-profile');
+        }
+
+        function cancelProfileForm() {
+            if(editingProfileIndex !== null) showScreen('screen-profile-details');
+            else showScreen('screen-profiles');
+        }
+
         function saveProfile() {
             const name = document.getElementById('p-name').value;
             const age = document.getElementById('p-age').value;
             const where = document.getElementById('p-where').value;
             const contact = document.getElementById('p-contact').value;
+            const avatar = document.getElementById('p-base64').value;
 
             if(!name) return alert("Preencha o nome!");
             
-            profiles.push({ 
-                name: name, 
-                age: age,
-                where: where,
-                contact: contact,
-                seenSurprises: [], 
-                completedThemes: [] 
-            });
-            saveToStorage();
-            
-            document.getElementById('p-name').value = '';
-            document.getElementById('p-age').value = '';
-            document.getElementById('p-where').value = '';
-            document.getElementById('p-contact').value = '';
-            
-            startHostSession(profiles.length - 1);
+            if (editingProfileIndex !== null) {
+                // Atualiza perfil existente
+                profiles[editingProfileIndex].name = name;
+                profiles[editingProfileIndex].age = age;
+                profiles[editingProfileIndex].where = where;
+                profiles[editingProfileIndex].contact = contact;
+                profiles[editingProfileIndex].avatar = avatar;
+                saveToStorage();
+                openProfileDetails(editingProfileIndex);
+            } else {
+                // Cria novo perfil
+                profiles.push({ 
+                    name: name, age: age, where: where, contact: contact, avatar: avatar,
+                    seenSurprises: [], completedThemes: [], history: [], cPoints: 0, qAnswered: 0 
+                });
+                saveToStorage();
+                openProfileDetails(profiles.length - 1);
+            }
         }
 
-        function startHostSession(index) {
-            isHost = true;
+        function deleteProfile() {
+            if(confirm("Tem certeza que deseja apagar este date e todo o seu histórico?")) {
+                profiles.splice(currentProfileIndex, 1);
+                saveToStorage();
+                showScreen('screen-profiles');
+            }
+        }
+
+        // --- FLUXO HOST: DETALHES DO PERFIL E HISTÓRICO ---
+        function openProfileDetails(index) {
             currentProfileIndex = index;
             let p = profiles[index];
+            
+            document.getElementById('detail-name').innerText = p.name;
+            
+            let infoArr = [];
+            if(p.age) infoArr.push(`${p.age} anos`);
+            if(p.where) infoArr.push(`📍 ${p.where}`);
+            if(p.contact) infoArr.push(`📱 ${p.contact}`);
+            document.getElementById('detail-info').innerHTML = infoArr.length > 0 ? infoArr.join(' | ') : 'Sem informações adicionais';
+            
+            if(p.avatar) {
+                document.getElementById('detail-avatar').src = p.avatar;
+                document.getElementById('detail-avatar').style.display = 'block';
+            } else {
+                document.getElementById('detail-avatar').style.display = 'none';
+            }
+
+            let percent = p.qAnswered > 0 ? Math.round((p.cPoints / (p.qAnswered * 5)) * 100) : 0;
+            let temasFeitos = p.completedThemes ? p.completedThemes.length : 0;
+            document.getElementById('detail-stats').innerText = `${percent}% de Sintonia | ${temasFeitos}/10 Temas Concluídos`;
+
+            // Renderiza o Histórico de Respostas
+            let historyList = document.getElementById('detail-history-list');
+            historyList.innerHTML = '';
+            if (p.history && p.history.length > 0) {
+                // Mostra as mais recentes primeiro
+                let reversedHistory = [...p.history].reverse();
+                reversedHistory.forEach(h => {
+                    historyList.innerHTML += `
+                        <div class="history-item">
+                            <div style="font-size: 10px; color: gray; text-transform: uppercase;">${h.theme}</div>
+                            <div class="history-q">${h.question}</div>
+                            <div class="history-a"><b>Você:</b> ${h.me}</div>
+                            <div class="history-a"><b>${p.name}:</b> ${h.them}</div>
+                            <div class="history-score">★ Sintonia: ${h.rating}/5</div>
+                        </div>
+                    `;
+                });
+                document.getElementById('detail-history-card').style.display = 'block';
+            } else {
+                document.getElementById('detail-history-card').style.display = 'none';
+            }
+
+            showScreen('screen-profile-details');
+        }
+
+        function startHostSession() {
+            isHost = true;
+            let p = profiles[currentProfileIndex];
             roomCode = Math.random().toString(36).substring(2, 6).toUpperCase();
             
             if(!p.seenSurprises) p.seenSurprises = [];
@@ -320,13 +548,13 @@
             saveToStorage();
 
             db.ref('rooms/' + roomCode).set({
-                p1Name: hostName,
-                p2Name: p.name,
+                p1Name: hostName, p1Avatar: hostAvatar,
+                p2Name: p.name, p2Avatar: p.avatar,
                 surprise: todaySurprise,
                 state: 'lobby',
-                currentTheme: -1,
-                currentQuestion: -1,
-                answers: { p1: "", p2: "" }
+                cPoints: p.cPoints || 0,
+                qAnswered: p.qAnswered || 0,
+                currentTheme: -1, currentQuestion: -1, answers: { p1: "", p2: "" }
             });
 
             document.getElementById('display-room-code').innerText = roomCode;
@@ -338,11 +566,15 @@
         // --- FLUXO DO CONVIDADO (ENTRAR) ---
         function joinRoom() {
             let name = document.getElementById('guest-name').value;
+            let avatar = document.getElementById('guest-base64').value;
             roomCode = document.getElementById('join-code').value.toUpperCase();
             if(!name || !roomCode) return alert("Preencha nome e código!");
 
             isHost = false;
-            db.ref('rooms/' + roomCode).update({ p2Name: name });
+            let updateObj = { p2Name: name };
+            if (avatar) updateObj.p2Avatar = avatar;
+
+            db.ref('rooms/' + roomCode).update(updateObj);
             
             document.getElementById('display-room-code').innerText = roomCode;
             showScreen('screen-dash');
@@ -354,6 +586,10 @@
             db.ref('rooms/' + roomCode).on('value', (snapshot) => {
                 const data = snapshot.val();
                 if(!data) return;
+
+                let percent = data.qAnswered > 0 ? Math.round((data.cPoints / (data.qAnswered * 5)) * 100) : 0;
+                document.getElementById('dash-connection-fill').style.width = percent + '%';
+                document.getElementById('dash-connection-text').innerText = `${percent}% (${data.qAnswered} Cartas Avaliadas)`;
 
                 if(data.state === 'lobby') {
                     document.getElementById('dash-surprise-text').innerText = data.surprise;
@@ -379,9 +615,13 @@
                     amIWaiting = false; 
                     
                     document.getElementById('rev-q-text').innerText = themesData[data.currentTheme].questions[data.currentQuestion];
+                    
                     document.getElementById('rev-name-1').innerText = data.p1Name;
+                    if(data.p1Avatar) { document.getElementById('rev-img-1').src = data.p1Avatar; document.getElementById('rev-img-1').style.display = 'inline-block'; }
                     document.getElementById('rev-ans-1').innerText = data.answers.p1;
+                    
                     document.getElementById('rev-name-2').innerText = data.p2Name;
+                    if(data.p2Avatar) { document.getElementById('rev-img-2').src = data.p2Avatar; document.getElementById('rev-img-2').style.display = 'inline-block'; }
                     document.getElementById('rev-ans-2').innerText = data.answers.p2;
                     
                     document.getElementById('host-controls').style.display = isHost ? 'block' : 'none';
@@ -435,26 +675,51 @@
             });
         }
 
-        function nextQuestion() {
+        function submitRating(score) {
             db.ref('rooms/' + roomCode).once('value').then(snap => {
                 let d = snap.val();
-                let nextQ = d.currentQuestion + 1;
+                let newCPoints = (d.cPoints || 0) + score;
+                let newQAnswered = (d.qAnswered || 0) + 1;
                 
+                let p = profiles[currentProfileIndex];
+                p.cPoints = newCPoints;
+                p.qAnswered = newQAnswered;
+                
+                // SALVANDO O HISTÓRICO LOCALMENTE
+                if(!p.history) p.history = [];
+                p.history.push({
+                    theme: themesData[d.currentTheme].title,
+                    question: themesData[d.currentTheme].questions[d.currentQuestion],
+                    me: d.answers.p1,
+                    them: d.answers.p2,
+                    rating: score
+                });
+                
+                saveToStorage();
+
+                let nextQ = d.currentQuestion + 1;
+                let updateObj = { cPoints: newCPoints, qAnswered: newQAnswered };
+
                 if(nextQ < themesData[d.currentTheme].questions.length) {
-                    db.ref('rooms/' + roomCode).update({ state: 'answering', currentQuestion: nextQ, answers: { p1: "", p2: "" } });
+                    updateObj.state = 'answering';
+                    updateObj.currentQuestion = nextQ;
+                    updateObj.answers = { p1: "", p2: "" };
+                    db.ref('rooms/' + roomCode).update(updateObj);
                 } else {
-                    if (isHost && currentProfileIndex !== null) {
-                        let p = profiles[currentProfileIndex];
-                        if (!p.completedThemes) p.completedThemes = [];
-                        if (!p.completedThemes.includes(d.currentTheme)) {
-                            p.completedThemes.push(d.currentTheme);
-                            saveToStorage();
-                        }
+                    if (!p.completedThemes) p.completedThemes = [];
+                    if (!p.completedThemes.includes(d.currentTheme)) {
+                        p.completedThemes.push(d.currentTheme);
+                        saveToStorage();
                     }
+                    updateObj.state = 'lobby';
+                    db.ref('rooms/' + roomCode).update(updateObj);
                     alert("Vocês finalizaram as perguntas deste tema!");
-                    db.ref('rooms/' + roomCode).update({ state: 'lobby' });
                 }
             });
+        }
+
+        function nextQuestion() {
+            alert("Use as estrelas de nota para avançar para a próxima pergunta e salvar o histórico!");
         }
 
         function backToLobby() {
@@ -464,11 +729,9 @@
         // --- FUNÇÃO PARA GERAR A IMAGEM ---
         function downloadReveal() {
             const captureArea = document.getElementById('capture-area');
-            
-            // html2canvas tira uma "foto" da div especificada
-            html2canvas(captureArea, { backgroundColor: "#ffffff" }).then(canvas => {
+            html2canvas(captureArea, { backgroundColor: "#ffffff", scale: 2 }).then(canvas => {
                 let link = document.createElement('a');
-                link.download = `date_${roomCode}_resposta.png`;
+                link.download = `date_sintonia.png`;
                 link.href = canvas.toDataURL("image/png");
                 link.click();
             });
