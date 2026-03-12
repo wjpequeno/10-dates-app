@@ -38,9 +38,21 @@
         
         <div id="screen-start" class="screen active">
             <h1>10 Dates</h1>
-            <p style="text-align: center; color: gray; margin-bottom: 30px;">O que vamos fazer hoje?</p>
-            <button class="btn" onclick="showScreen('screen-profiles')">Organizar um Date (Meu Celular)</button>
-            <button class="btn btn-outline" onclick="showScreen('screen-join')">Entrar em um Date (Convidado)</button>
+            <p style="text-align: center; color: gray; margin-bottom: 20px;">Como você quer se conectar hoje?</p>
+            
+            <div class="card" style="margin-bottom: 15px; border: 1px solid var(--primary-color);">
+                <h3 style="margin-top: 0; color: var(--primary-color);">Organizar um Date</h3>
+                <div class="input-group">
+                    <label>Seu Nome (Organizador)</label>
+                    <input type="text" id="host-name-input" placeholder="Como você se chama?">
+                </div>
+                <button class="btn" onclick="startAsHost()">Abrir Meus Perfis</button>
+            </div>
+
+            <div class="card" style="padding: 20px;">
+                <h3 style="margin-top: 0; font-size: 16px; color: gray;">Fui Convidado</h3>
+                <button class="btn btn-outline" style="padding: 10px;" onclick="showScreen('screen-join')">Entrar em uma Sala</button>
+            </div>
         </div>
 
         <div id="screen-profiles" class="screen">
@@ -194,16 +206,31 @@
 
         // --- VARIÁVEIS DE ESTADO ---
         let profiles = JSON.parse(localStorage.getItem('10dates_profiles')) || [];
+        let hostName = localStorage.getItem('10dates_hostname') || "";
         let currentProfileIndex = null;
         let isHost = false;
         let roomCode = "";
-        let amIWaiting = false; // TRAVA DE SEGURANÇA para o bug de digitação
+        let amIWaiting = false;
+
+        // Preenche o nome do host se já existir no cache
+        window.onload = () => {
+            if(document.getElementById('host-name-input')) {
+                document.getElementById('host-name-input').value = hostName;
+            }
+        };
 
         // --- NAVEGAÇÃO BÁSICA ---
         function showScreen(id) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.getElementById(id).classList.add('active');
             if(id === 'screen-profiles') renderProfiles();
+        }
+
+        function startAsHost() {
+            hostName = document.getElementById('host-name-input').value;
+            if(!hostName) return alert("Preencha o seu nome como organizador!");
+            localStorage.setItem('10dates_hostname', hostName);
+            showScreen('screen-profiles');
         }
 
         // --- FLUXO DO HOST (GERENCIAR PERFIS) ---
@@ -243,18 +270,16 @@
             let p = profiles[index];
             roomCode = Math.random().toString(36).substring(2, 6).toUpperCase();
             
-            // Sorteia a Surpresa que ainda não foi vista
             if(!p.seenSurprises) p.seenSurprises = [];
             let availableSurprises = surpriseData.filter(s => !p.seenSurprises.includes(s));
             let todaySurprise = availableSurprises.length > 0 ? availableSurprises[Math.floor(Math.random() * availableSurprises.length)] : "Aproveitem a companhia um do outro!";
             
-            // Salva no perfil local
             p.seenSurprises.push(todaySurprise);
             saveToStorage();
 
-            // Cria a sala no Firebase
+            // Sala agora usa o nome do Organizador definido na tela inicial
             db.ref('rooms/' + roomCode).set({
-                p1Name: "Organizador",
+                p1Name: hostName,
                 p2Name: p.name,
                 surprise: todaySurprise,
                 state: 'lobby',
@@ -289,7 +314,6 @@
                 const data = snapshot.val();
                 if(!data) return;
 
-                // LOBBY E TEMAS
                 if(data.state === 'lobby') {
                     document.getElementById('dash-surprise-text').innerText = data.surprise;
                     document.getElementById('room-status').innerText = `${data.p1Name} e ${data.p2Name} conectados!`;
@@ -298,9 +322,7 @@
                     showScreen('screen-dash');
                 }
 
-                // RESPONDENDO A PERGUNTA
                 if(data.state === 'answering') {
-                    // SE EU AINDA NÃO CLIQUEI EM "PRONTO", ATUALIZA MINHA TELA
                     if (!amIWaiting) {
                         document.getElementById('q-theme').innerText = themesData[data.currentTheme].title;
                         document.getElementById('q-text').innerText = themesData[data.currentTheme].questions[data.currentQuestion];
@@ -312,9 +334,8 @@
                     showScreen('screen-question');
                 }
 
-                // REVELAÇÃO
                 if(data.state === 'reveal') {
-                    amIWaiting = false; // Tira a trava, a rodada acabou!
+                    amIWaiting = false; 
                     
                     document.getElementById('rev-q-text').innerText = themesData[data.currentTheme].questions[data.currentQuestion];
                     document.getElementById('rev-name-1').innerText = data.p1Name;
@@ -322,7 +343,6 @@
                     document.getElementById('rev-name-2').innerText = data.p2Name;
                     document.getElementById('rev-ans-2').innerText = data.answers.p2;
                     
-                    // Só o Host pode clicar em avançar para não bagunçar a sala
                     document.getElementById('host-controls').style.display = isHost ? 'block' : 'none';
                     document.getElementById('guest-waiting-text').style.display = isHost ? 'none' : 'block';
                     
@@ -335,7 +355,6 @@
             const list = document.getElementById('theme-list');
             list.innerHTML = '';
             
-            // Pega o histórico local se for o Host
             let p = isHost ? profiles[currentProfileIndex] : null;
             let completed = p && p.completedThemes ? p.completedThemes : [];
 
@@ -344,7 +363,6 @@
                 let btnStyle = isDone ? "background-color: #27ae60; color: white; border: none;" : "";
                 let check = isDone ? "✅ " : "";
                 
-                // Ambos podem clicar, mas o Host que gerencia o fluxo localmente
                 list.innerHTML += `<button class="btn btn-outline" style="${btnStyle}" onclick="selectTheme(${index})">${check}${theme.title}</button>`;
             });
         }
@@ -358,7 +376,7 @@
             let answerText = document.getElementById('my-answer').value;
             if(!answerText) return alert("Escreva algo!");
 
-            amIWaiting = true; // ATIVA A TRAVA
+            amIWaiting = true; 
             document.getElementById('answer-area').style.display = 'none';
             document.getElementById('waiting-area').style.display = 'block';
 
@@ -367,7 +385,6 @@
             else updateObj['answers/p2'] = answerText;
 
             db.ref('rooms/' + roomCode).update(updateObj).then(() => {
-                // Se os dois já tiverem textos salvos, avança para Reveal
                 db.ref('rooms/' + roomCode).once('value').then(snap => {
                     let d = snap.val();
                     if(d.answers.p1 !== "" && d.answers.p2 !== "") {
@@ -385,7 +402,6 @@
                 if(nextQ < themesData[d.currentTheme].questions.length) {
                     db.ref('rooms/' + roomCode).update({ state: 'answering', currentQuestion: nextQ, answers: { p1: "", p2: "" } });
                 } else {
-                    // FIM DO TEMA! Marca como concluído no celular do Host
                     if (isHost && currentProfileIndex !== null) {
                         let p = profiles[currentProfileIndex];
                         if (!p.completedThemes) p.completedThemes = [];
